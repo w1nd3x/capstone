@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# You may find this shell script helpful.
+#
+
+tmp=./datasets
+data=/home/nchamber/corpora/Twitter/USNA
+
+username=teamfinance
+
+timestamp=`date +%Y%m%d`
+timestamp=`expr $timestamp - 4`
+# These statements copy the data directory above to the local machine.
+# The tweets are 100's of MBs, so we don't want our Java code
+# constantly making NFS calls. Copy it all into /tmp/sentiment-data.
+cpdata=$tmp
+if [ -d $tmp ]; then
+    # If our /tmp directory does not exist, create it and copy data.
+    if [ ! -d $tmp/tweets ]; then
+        mkdir $tmp/tweets
+    fi
+    # If mkdir succeeded, copy data.
+    if [ ! -e $tmp/tweets/$timestamp.txt.gz ]; then
+	    # do a scp of the most recent tweets
+        echo "Copying most recent twitter data"
+	    `scp $username@data.cs.usna.edu:$data/$timestamp.txt.gz $tmp/sentiment-data/tweets/$timestamp.txt.gz`
+    fi
+
+    # Set the /tmp path.
+    if [ -d $tmp]; then
+        cpdata=$tmp
+    fi
+fi
+
+
+# Run the program.
+echo "Data directory: $cpdata"
+java -mx1500m -cp classes usna.sentiment.TrainTest \
+  -data      $cpdata \
+  $@
