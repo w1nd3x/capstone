@@ -182,7 +182,7 @@ public class Model {
 	 *	Run a model on a set of raw tweets
 	 *
 	 */
-	public void process(String timestamp) {
+	public void process(String timestamp,String anchor) {
 		Counter<String> positiveWords = datasets.getLexiconPositiveWords();
 		Counter<String> negativeWords = datasets.getLexiconNegativeWords();
 		Counter<String> objectiveWords = datasets.getLexiconObjectiveWords();
@@ -190,12 +190,17 @@ public class Model {
     SENTIMENT sent;
 		String[] word;
     englishWords = datasets.loadEnglish();
-
+    lexicon = datasets.getLexicon(anchor);
+    if(lexicon == null) {
+      System.err.println("No Lexicon for " + anchor);
+      System.exit(1);
+    }
 		int totPos = 0;
 		int totNeg = 0;
 		int totObj = 0;
     String tweet = datasets.getNextDatedTweet(timestamp);
     while(tweet != null) {
+      tweet = datasets.filterTweet(tweet);
       if(engCheck(tweet)) {
         sent = naiveBayes(tweet,positiveWords,negativeWords,objectiveWords);  
         LabeledTweet labtweet = new LabeledTweet(sent, tweet);
@@ -242,6 +247,6 @@ public class Model {
 	 */
 	public static void main(String args[]) {
 		Model test = new Model();
-    test.process("20130317");
+    test.process("20130317","apple");
 	}
 }

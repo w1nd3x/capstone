@@ -214,6 +214,22 @@ public class Datasets {
 	  }
 	  return words;	
   }
+  
+  public ArrayList<String> getLexicon(String anchor) {
+    ArrayList<String> lexicon = new ArrayList<String>();
+    try {
+      BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File("" + anchor + ".lex"))));
+      String line = in.readLine();
+      while( line != null ) {
+        lexicon.add(line);
+        line = in.readLine();
+      }
+    } catch( IOException ex ) {
+      System.out.println("Lexicon for " + anchor + " does not exist.  Building...");
+      return null;
+    }
+    return lexicon;
+  }
  
 	/**
    *  gets all the stop words from the text document

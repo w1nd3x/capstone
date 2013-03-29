@@ -1,3 +1,5 @@
+package usna.util;
+
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -21,13 +23,20 @@ public class Stock {
 	private String endDay;
 	
 	
-	public Stock(String tick, String filepath){
+	public Stock(String tick, String start, String end){
 		
 		//Constructor
 		stockData = new HashMap<String, List<String>>();
 		ticker = tick;
-		Scanner s = new Scanner(System.in);
 		
+		startYear = start.substring(0, 3);
+		startMonth = start.substring(4,5);
+		startDay = start.substring(6,7);
+		
+		endYear = end.substring(0, 3);
+		endMonth = end.substring(4,5);
+		endDay = end.substring(6,7);
+		/*
 		//Gather year date time information
 		System.out.println("Start Year:");
 		startYear = s.next();
@@ -46,13 +55,15 @@ public class Stock {
 		
 		System.out.println("End Day:");
 		endDay = s.next();
+		*/
+		
 		
 		//GENERATE CSV FILE
 		
 		
 		try{
             this.downloadData();
-			this.fillData(filepath);
+			this.fillData("table1.csv");
 		}
 		catch(Exception e)
 		{
@@ -111,18 +122,18 @@ public class Stock {
     		e.printStackTrace();
     	}
     }
-
+/*
 	public static void main(String[] args){
         Scanner s = new Scanner(System.in);
         System.out.println("Enter your stock:");
 
-		Stock aapl = new Stock(s.next(), "table1.csv");
+		Stock aapl = new Stock(s.next());
 
 		System.out.println("Query map: (YYYY-MM-DD");
 		
 		System.out.println(aapl.getData(s.next()));
 	}
-	
+	*/
 
 }
 

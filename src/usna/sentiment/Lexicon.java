@@ -8,12 +8,6 @@ import usna.util.Counter;
 import usna.util.Counters;
 import usna.sentiment.LabeledTweet.SENTIMENT;
 
-import org.jdom2.Attribute;
-import org.jdom2.Element;
-import org.jdom2.Document;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-
 
 public class Lexicon {
 	private double previousPMI = 0;
@@ -39,87 +33,97 @@ public class Lexicon {
     System.out.println("previous PMI: " + previousPMI);
     System.out.println("new PMI: " + newPMI);
 		/* The base condition */
-		if(previousPMI > newPMI)
+		if(previousPMI > newPMI) {
+      try {
+			  PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("./datasets/lexicon/" + anchor + ".lex")));
+        for(String l : lexicon) {
+          writer.println(l);
+        }
+        writer.close();
+      } catch(IOException ex) { ex.printStackTrace(); }
 			return;
-		/* Recursively call the list */
-		if (lexicon.isEmpty())
-			lexicon.add(anchor);
-		String tweet = datasets.getNextRawTweet();
-		String tempArray[];
-		while(tweet != null) {
-			if(engCheck(tweet)) {
-				tempArray = tweet.toLowerCase().split("\t");
-				if(tempArray.length > 0) {
-					List<String> words;
-		    	tweet = tempArray[0];
-		    	tweet = datasets.filterTweet(tweet);
-		    	words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
-		    	for(String word : words) {
-						if(!stopwords.contains(word)) {
-							if(unigrams.containsKey(word)) {
-								unigrams.incrementCount(word,1);
-							} else {
-								unigrams.setCount(word,1);
-							}
-						}
-		    	}
-		    	for(String assocWord : lexicon) {
-						if(words.contains(assocWord)) {
-							for(String word : words) {
-								if(!stopwords.contains(word)) {
-									if(tempWords.containsKey(word) && word.length() > 3) {
-										tempWords.incrementCount(word,1);	
-									} else if(word.length() > 3) {
-										tempWords.setCount(word,1);
-									}
-								}
-							}
-						}
-		    	}
-				}
-	  	}
-			tweet = datasets.getNextRawTweet();
-		}
-    
-		for(String anchor : lexicon) {
-			for(String word : tempWords.keySet()) {
-				if(unigrams.getCount(word) > 10) {
-					double P = PMI(unigrams.getCount(anchor),
+
+    } else {
+		  /* Recursively call the list */
+		  if (lexicon.isEmpty())
+			  lexicon.add(anchor);
+		  String tweet = datasets.getNextRawTweet();
+		  String tempArray[];
+		  while(tweet != null) {
+			  if(engCheck(tweet)) {
+				  tempArray = tweet.toLowerCase().split("\t");
+				  if(tempArray.length > 0) {
+					  List<String> words;
+		    	  tweet = tempArray[0];
+		    	  tweet = datasets.filterTweet(tweet);
+		    	  words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
+		    	  for(String word : words) {
+						  if(!stopwords.contains(word)) {
+							  if(unigrams.containsKey(word)) {
+								  unigrams.incrementCount(word,1);
+							  } else {
+								  unigrams.setCount(word,1);
+							  }
+						  }
+		    	  }
+		    	  for(String assocWord : lexicon) {
+						  if(words.contains(assocWord)) {
+							  for(String word : words) {
+								  if(!stopwords.contains(word)) {
+									  if(tempWords.containsKey(word) && word.length() > 3) {
+										  tempWords.incrementCount(word,1);	
+									  } else if(word.length() > 3) {
+										  tempWords.setCount(word,1);
+									  }
+								  }
+							  }
+						  }
+		    	  }
+				  }
+	  	  }
+			  tweet = datasets.getNextRawTweet();
+      }
+		
+      for(String anchor : lexicon) {
+			  for(String word : tempWords.keySet()) {
+				  if(unigrams.getCount(word) > 10) {
+					  double P = PMI(unigrams.getCount(anchor),
 							unigrams.getCount(word),
 							tempWords.getCount(word),
 							unigrams.totalCount() );
-					if(tempPMI.containsKey(word)) {
-						if(P > tempPMI.getCount(word)) {
+					  if(tempPMI.containsKey(word)) {
+						  if(P > tempPMI.getCount(word)) {
+							  tempPMI.setCount(word,P);
+						  }
+					  } else {
 							tempPMI.setCount(word,P);
-						}
-					} else {
-							tempPMI.setCount(word,P);
-					}
-				}
-			}
-		}
-		double lambda = .75;
-		List<String> sortedWords = Counters.sortedKeys(tempWords);
-		for (String s : sortedWords) {
-			score.setCount(s, lambda * tempPMI.getCount(s) + (1 - lambda)
-				* tempWords.getCount(s));
-		}
-		List<String> scores = Counters.sortedKeys(score);
-		for(String s : scores) {
-			if(!lexicon.contains(s)) {
-				System.out.println("-----------------");
-				System.out.println(">> " + s + "| PMI: "
+					  }
+				  }
+			  }
+		  }
+		  double lambda = .75;
+		  List<String> sortedWords = Counters.sortedKeys(tempWords);
+		  for (String s : sortedWords) {
+			  score.setCount(s, lambda * tempPMI.getCount(s) + (1 - lambda)
+				  * tempWords.getCount(s));
+		  }
+		  List<String> scores = Counters.sortedKeys(score);
+		  for(String s : scores) {
+			  if(!lexicon.contains(s)) {
+				  System.out.println("-----------------");
+				  System.out.println(">> " + s + "| PMI: "
 						+ tempPMI.getCount(s) + "| count: "
 						+ tempWords.getCount(s) + "| score: "
 						+ score.getCount(s) );
-				System.out.println("-----------------");
-				previousPMI = newPMI;
-				newPMI = tempPMI.getCount(s);
-				lexicon.add(s);
-				break;
-			}
-		}
-    build(lexicon); 
+				  System.out.println("-----------------");
+				  previousPMI = newPMI;
+				  newPMI = tempPMI.getCount(s);
+				  lexicon.add(s);
+				  break;
+			  }
+		  }
+      build(lexicon); 
+    }
 	}
   
   /**
