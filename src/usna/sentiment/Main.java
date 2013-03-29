@@ -26,7 +26,7 @@ public class Main {
 
     // Here we have a basic outline for how to add in command line arguments from
     // Chamber's code.
-    Map<String, String> flags = CommandLineUtils.simpleCommandLineParser(args);
+    /*Map<String, String> flags = CommandLineUtils.simpleCommandLineParser(args);
     if (!flags.containsKey("-data")) {
       System.out.println("TrainTest -data <data-dir> [-learnmylex] [-usemylex]");
 			System.exit(1);
@@ -41,7 +41,7 @@ public class Main {
 			testWithLearned = true;
 
 		datasets = new Datasets(flags.get("-data"));
-
+    */
     // After done whatever we're going to do with the commandline we need to 
     // sdet up and run the model.
 	}

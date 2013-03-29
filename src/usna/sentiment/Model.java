@@ -202,16 +202,22 @@ public class Model {
     while(tweet != null) {
       tweet = datasets.filterTweet(tweet);
       if(engCheck(tweet)) {
-        sent = naiveBayes(tweet,positiveWords,negativeWords,objectiveWords);  
-        LabeledTweet labtweet = new LabeledTweet(sent, tweet);
-        labeled.add(labtweet);
-        if(sent.equals(SENTIMENT.POSITIVE)) {
-          totPos++;
-        } else if(sent.equals(SENTIMENT.NEGATIVE)) {
-          totNeg++;
-        } else {
-          totObj++;
-        } 
+        ArrayList<String> words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
+        for(String anchorWord : lexicon) {
+          if(words.contains(anchorWord)) {
+            sent = naiveBayes(tweet,positiveWords,negativeWords,objectiveWords);  
+            LabeledTweet labtweet = new LabeledTweet(sent, tweet);
+            labeled.add(labtweet);
+            if(sent.equals(SENTIMENT.POSITIVE)) {
+              totPos++;
+            } else if(sent.equals(SENTIMENT.NEGATIVE)) {
+              totNeg++;
+            } else {
+              totObj++;
+            } 
+            break;
+          }
+        }
       }
       tweet = datasets.getNextDatedTweet(timestamp);
     }

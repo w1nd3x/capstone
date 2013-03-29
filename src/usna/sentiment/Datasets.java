@@ -218,14 +218,14 @@ public class Datasets {
   public ArrayList<String> getLexicon(String anchor) {
     ArrayList<String> lexicon = new ArrayList<String>();
     try {
-      BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File("" + anchor + ".lex"))));
+      BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File("./datasets/lexicon/" + anchor + ".lex"))));
       String line = in.readLine();
       while( line != null ) {
         lexicon.add(line);
         line = in.readLine();
       }
     } catch( IOException ex ) {
-      System.out.println("Lexicon for " + anchor + " does not exist.  Building...");
+      System.out.println("Lexicon for " + anchor + " does not exist.");
       return null;
     }
     return lexicon;
