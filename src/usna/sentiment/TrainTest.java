@@ -77,40 +77,41 @@ public class TrainTest {
      * @return a SENTIMENT specific to the tweet parameter
      *
      */
-    public SENTIMENT naiveBayes(String tweet, Counter<String> positiveWords, Counter<String> negativeWords, Counter<String> objectiveWords) {
-        String[] strArray = null;
-        double pos = 0;
-        double neg = 0;
-        double obj = 0;
+  public SENTIMENT naiveBayes(String tweet, Counter<String> positiveWords, Counter<String> negativeWords,           
+      Counter<String> objectiveWords) {
+    String[] strArray = null;
+    double pos = 0;
+    double neg = 0;
+    double obj = 0;
 
-        // filter noise out of the tweet
-        tweet = filterTweet(tweet);
+    strArray = tweet.split("[\\s]+");
 
-        strArray = tweet.split("[\\s]+");
-
-        // add all the probabilities together using logs to smooth some of errors
-        for( String word : strArray ) {
-            if(positiveWords.containsKey(word))
-                pos = pos + Math.abs(Math.log(positiveWords.getCount(word)));
-            if(negativeWords.containsKey(word))
-                neg = neg + Math.abs(Math.log(negativeWords.getCount(word)));
-            if(objectiveWords.containsKey(word))
-                obj = obj + Math.abs(Math.log(objectiveWords.getCount(word)));
-        }
-        
-        // convert all the weights into percentages
-        obj = obj / (obj + neg + pos);
-        pos = pos / (pos + neg + obj);
-        neg = neg / (pos + neg + obj);
-
-        // apply a threshold to get values
-        if(obj > .40)
-            return SENTIMENT.OBJECTIVE;
-        if( pos > .40)
-            return SENTIMENT.POSITIVE;
-        else
-            return SENTIMENT.NEGATIVE;
+    // add all the probabilities together using logs to smooth some of errors
+    for( String word : strArray ) {
+      if(positiveWords.containsKey(word))
+        pos = pos + Math.abs(Math.log(positiveWords.getCount(word)));
+      if(negativeWords.containsKey(word))
+        neg = neg + Math.abs(Math.log(negativeWords.getCount(word)));
+      if(objectiveWords.containsKey(word))
+        obj = obj + Math.abs(Math.log(objectiveWords.getCount(word)));
     }
+        
+    // convert all the weights into percentages
+    obj = Math.exp(obj);
+    pos = Math.exp(pos);
+    neg = Math.exp(neg);
+    obj = obj / (obj + neg + pos);
+    pos = pos / (pos + neg + obj);
+    neg = neg / (pos + neg + obj);
+
+    // apply a threshold to get values
+    if(obj > .40)
+      return SENTIMENT.OBJECTIVE;
+    if( pos > .40)
+      return SENTIMENT.POSITIVE;
+    else
+      return SENTIMENT.NEGATIVE;
+  }
 
 
     /**
@@ -118,7 +119,7 @@ public class TrainTest {
      */
     public static String filterTweet(String tweet) {
         tweet = tweet.replaceAll("http://[^\\s]+", "");
-        return tweet.toLowerCase().replaceAll("[\\,\\.\\!\\@\\#\\$\\%\\^\\&\\*\\_\\-\\+\\=\\?\\\"]", " ");
+        return tweet.toLowerCase().replaceAll("[\\,\\.\\!\\@\\#\\$\\%\\^\\&\\*\\_\\-\\+\\=\\?\\\"]", "");
     }
 
 
@@ -128,37 +129,36 @@ public class TrainTest {
 	// Adds sentiment labels to the already determined related //
 	// tweets //
 	// **********************************************************//
-	public void addSentiment() {
-		Counter<String> positiveWords = datasets.getLexiconPositiveWords();
+  public void addSentiment() {
+	  Counter<String> positiveWords = datasets.getLexiconPositiveWords();
 		Counter<String> negativeWords = datasets.getLexiconNegativeWords();
 		Counter<String> objectiveWords = datasets.getLexiconObjectiveWords();
 		List<LabeledTweet> labeled = new ArrayList<LabeledTweet>();
-        SENTIMENT sent;
+    SENTIMENT sent;
 		String[] word;
 
 		double totPos = 0;
 		double totNeg = 0;
 		double totObj = 0;
 
-		// for (LabeledTweet t : tweets) {
-        try {
-			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("microTweets.txt",true)));
-		    for (String t : relatedTweets) {
-                sent = naiveBayes(t,positiveWords,negativeWords,objectiveWords);  
-			    LabeledTweet tweet = new LabeledTweet(sent, t);
-			    labeled.add(tweet);
-                writer.printf("%s\n",tweet.toString());
-                if(sent.equals(SENTIMENT.POSITIVE))
-                    totPos++;
-                else if(sent.equals(SENTIMENT.NEGATIVE))
-                    totNeg++;
-                else
-                    totObj++;
-		    }
-            writer.close();
+    try {
+			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("microTweets.txt")));
+		  for (String t : relatedTweets) {
+        sent = naiveBayes(t,positiveWords,negativeWords,objectiveWords);  
+			  LabeledTweet tweet = new LabeledTweet(sent, t);
+			  labeled.add(tweet);
+        writer.printf("%s\n",tweet.toString());
+        if(sent.equals(SENTIMENT.POSITIVE))
+          totPos++;
+        else if(sent.equals(SENTIMENT.NEGATIVE))
+          totNeg++;
+        else
+          totObj++;
+		  }
+      writer.close();
 		} catch (IOException ex) { ex.printStackTrace(); }
 		
-        System.out.println("---------------------------------");
+    System.out.println("---------------------------------");
 		System.out.println("TOTAL POSITIVES: " + totPos + " 	|| percent: "
 				+ totPos / relatedTweets.size() * 100 + "%");
 		System.out.println("TOTAL NEGATIVES: " + totNeg + " 	|| percent: "
@@ -304,8 +304,6 @@ public class TrainTest {
 	// Finds the related tweets for later sentiment analysis //
 	// **********************************************************//
 	public void findRelated() {
-		int numTweets = 0;
-		String[] words;
 		String[] tweetParts;
 		String tweet = datasets.getNextRawTweet();
 		System.out.println("Finding related tweets!");
@@ -314,12 +312,11 @@ public class TrainTest {
 			if (tweetParts.length > 0) {
 				tweet = filterTweet(tweetParts[0]);
 				if (engCheck(tweet)) {
-					//System.out.println(tweet);
-					for (int i = 0; i < Lexicon.size(); i++) {
-						words = tweet.split("[\\p{Punct}\\s]+");
-						List<String> twit = new ArrayList(Arrays.asList(words));
-						if (twit.contains(Lexicon.get(i))) {
+					List<String> twit = new ArrayList(Arrays.asList(tweet.split("[\\s]+")));
+					for (String l : Lexicon) {
+						if (twit.contains(l)) {
 							relatedTweets.add(tweet);
+              break;
 						}
 					}
 				}
@@ -327,6 +324,8 @@ public class TrainTest {
 			tweet = datasets.getNextRawTweet();
 		}
 
+    // uncomment to get an output of the tweets
+    /*
 		try {
 			// Create file
 			FileWriter fstream = new FileWriter("outTweets.txt");
@@ -339,7 +338,7 @@ public class TrainTest {
 			out.close();
 		} catch (Exception e) {// Catch exception if any
 			System.err.println("Error: " + e.getMessage());
-		}
+		} */
 	}
 
 	// **********************************************************//
@@ -400,19 +399,19 @@ public class TrainTest {
 	 * Checks to see if English
 	 */
 	public boolean engCheck(String tweet) {
-	    String[] tweetArray;
-	    int tokens = 0;
+	  String[] tweetArray;
+	  int tokens = 0;
 		// most common words in english alphabet
 		if (tweet.matches("^[\\p{ASCII}]*$")) {
-		    tweetArray = tweet.split("[\\p{P} \\t\\n\\r]+");
-		    if(tweetArray.length > 0) {
-			for(int i = 0; i < tweetArray.length; i++) {
+		  tweetArray = tweet.split("[\\p{P} \\t\\n\\r]+");
+		  if(tweetArray.length > 0) {
+			  for(int i = 0; i < tweetArray.length; i++) {
 			    if(englishWords.contains(tweetArray[i])) { tokens++; }
-			}
-			if((double)tokens/tweetArray.length > .33)
+			  }
+			  if((double)tokens/tweetArray.length > .33)
 			    return true;
-		    }
-        }
+		  }
+    }
 		return false;
 	}
 

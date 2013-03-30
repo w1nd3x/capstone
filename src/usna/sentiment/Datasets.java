@@ -280,7 +280,7 @@ public class Datasets {
    */
 	public static String filterTweet(String tweet) {
 		tweet = tweet.replaceAll("http://[^\\s]+", "");
-		return tweet.toLowerCase().replaceAll("[\\,\\.\\!\\@\\#\\$\\%\\^\\&\\*\\_\\-\\+\\=\\?\\\"\\/\\\\\\)\\(]", "");
+		return tweet.toLowerCase().replaceAll("[\\,\\.\\!\\@\\#\\$\\%\\^\\&\\*\\_\\-\\+\\=\\?\\\"]", "");
 	}
   
   /**

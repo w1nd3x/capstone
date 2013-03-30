@@ -1,6 +1,13 @@
 package usna.util;
 
 import java.util.List;
+import java.io.*;
+
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
 public class Day {
 	
@@ -45,5 +52,21 @@ public class Day {
 	public String getDate(){
 		return date;
 	}
+    
+  public void writeToXMLFile() {
+    try {
+      Element sentiment = new Element("sentiment");
+      Document doc = new Document(sentiment);
+      Element company = new Element("company");
+      sentiment.addContent(company);
+      Element name = new Element("name");
+      name.setText("apple");
+      company.addContent(name);
+      XMLOutputter xmlOutput = new XMLOutputter();
+      xmlOutput.output(doc, new FileWriter("sentiment.xml"));
+    } catch (IOException io) {
+      System.out.println(io.getMessage());
+    }
+  }
 
 }

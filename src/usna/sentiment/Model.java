@@ -148,10 +148,7 @@ public class Model {
     double pos = 0;
     double neg = 0;
     double obj = 0;
-
-    // filter noise out of the tweet
-    tweet = datasets.filterTweet(tweet);
-
+    
     strArray = tweet.split("[\\s]+");
 
     // add all the probabilities together using logs to smooth some of errors
@@ -165,6 +162,9 @@ public class Model {
     }
         
     // convert all the weights into percentages
+    obj = Math.exp(obj);
+    pos = Math.exp(pos);
+    neg = Math.exp(neg);
     obj = obj / (obj + neg + pos);
     pos = pos / (pos + neg + obj);
     neg = neg / (pos + neg + obj);
@@ -172,58 +172,67 @@ public class Model {
     // apply a threshold to get values
 	  if(obj > .4)
       return SENTIMENT.OBJECTIVE;
-	  else if (neg > .7) 
-      return SENTIMENT.NEGATIVE;
-	  else 
+	  else if (pos > .4) 
       return SENTIMENT.POSITIVE;
+	  else 
+      return SENTIMENT.NEGATIVE;
   }
 
 	/*
 	 *	Run a model on a set of raw tweets
 	 *
 	 */
-	public void process(String timestamp,String anchor) {
+	public List<String> process(String timestamp,String anchor) {
 		Counter<String> positiveWords = datasets.getLexiconPositiveWords();
 		Counter<String> negativeWords = datasets.getLexiconNegativeWords();
 		Counter<String> objectiveWords = datasets.getLexiconObjectiveWords();
-		List<LabeledTweet> labeled = new ArrayList<LabeledTweet>();
+	  ArrayList<String> relatedTweets = new ArrayList<String>();
+    List<String> results = new ArrayList<String>();
     SENTIMENT sent;
-		String[] word;
+		String[] tweetParts;
     englishWords = datasets.loadEnglish();
     lexicon = datasets.getLexicon(anchor);
     if(lexicon == null) {
       System.err.println("No Lexicon for " + anchor);
       System.exit(1);
     }
-		int totPos = 0;
-		int totNeg = 0;
-		int totObj = 0;
+		
+    double totPos = 0;
+		double totNeg = 0;
+		double totObj = 0;
     String tweet = datasets.getNextDatedTweet(timestamp);
     while(tweet != null) {
-      tweet = datasets.filterTweet(tweet);
-      if(engCheck(tweet)) {
-        ArrayList<String> words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
-        for(String anchorWord : lexicon) {
-          if(words.contains(anchorWord)) {
-            sent = naiveBayes(tweet,positiveWords,negativeWords,objectiveWords);  
-            LabeledTweet labtweet = new LabeledTweet(sent, tweet);
-            labeled.add(labtweet);
-            if(sent.equals(SENTIMENT.POSITIVE)) {
-              totPos++;
-            } else if(sent.equals(SENTIMENT.NEGATIVE)) {
-              totNeg++;
-            } else {
-              totObj++;
-            } 
-            break;
+      tweetParts = tweet.toLowerCase().split("\t");
+      if(tweetParts.length > 0) {
+        tweet = datasets.filterTweet(tweetParts[0]);
+        if(engCheck(tweet)) {
+          ArrayList<String> words = new ArrayList(Arrays.asList(tweet.split("[\\s]+")));
+          for(String anchorWord : lexicon) {
+            if(words.contains(anchorWord)) {
+              relatedTweets.add(tweet);
+              break;
+            }
           }
         }
       }
       tweet = datasets.getNextDatedTweet(timestamp);
     }
-    System.out.println("pos: " + totPos);
-    System.out.println("neg: " + totNeg);
-    System.out.println("obj: " + totObj); 
+
+    for( String t : relatedTweets ) {
+      sent = naiveBayes(t,positiveWords,negativeWords,objectiveWords);  
+      if(sent.equals(SENTIMENT.POSITIVE)) {
+        totPos++;
+      } else if(sent.equals(SENTIMENT.NEGATIVE)) {
+        totNeg++;
+      } else {
+        totObj++;
+      }
+    }
+    results.add(Double.toString(totPos));
+    results.add(Double.toString(totNeg));
+    results.add(Double.toString(totObj));
+    results.add(Integer.toString(relatedTweets.size()));
+    return results;
   }
   
   /**
@@ -236,11 +245,11 @@ public class Model {
 		if (tweet.matches("^[\\p{ASCII}]*$")) {
       tweetArray = tweet.split("[\\p{P} \\t\\n\\r]+");
       if(tweetArray.length > 0) {
-			for(int i = 0; i < tweetArray.length; i++) {
-        if(englishWords.contains(tweetArray[i])) { tokens++; }
-			}
-			if((double)tokens/tweetArray.length > .33)
-        return true;
+			  for(int i = 0; i < tweetArray.length; i++) {
+          if(englishWords.contains(tweetArray[i])) { tokens++; }
+			  }
+			  if((double)tokens/tweetArray.length > .33)
+          return true;
 		  }
     }
     return false;
