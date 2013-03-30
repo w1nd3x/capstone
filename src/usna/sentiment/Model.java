@@ -182,12 +182,12 @@ public class Model {
 	 *	Run a model on a set of raw tweets
 	 *
 	 */
-	public List<String> process(String timestamp,String anchor) {
+	public List<Integer> process(String timestamp,String anchor) {
 		Counter<String> positiveWords = datasets.getLexiconPositiveWords();
 		Counter<String> negativeWords = datasets.getLexiconNegativeWords();
 		Counter<String> objectiveWords = datasets.getLexiconObjectiveWords();
 	  ArrayList<String> relatedTweets = new ArrayList<String>();
-    List<String> results = new ArrayList<String>();
+    List<Integer> results = new ArrayList<Integer>();
     SENTIMENT sent;
 		String[] tweetParts;
     englishWords = datasets.loadEnglish();
@@ -197,9 +197,9 @@ public class Model {
       System.exit(1);
     }
 		
-    double totPos = 0;
-		double totNeg = 0;
-		double totObj = 0;
+    Double totPos = new Double(0.0);
+    Double totNeg = new Double(0.0);
+    Double totObj = new Double(0.0);
     String tweet = datasets.getNextDatedTweet(timestamp);
     while(tweet != null) {
       tweetParts = tweet.toLowerCase().split("\t");
@@ -228,10 +228,12 @@ public class Model {
         totObj++;
       }
     }
-    results.add(Double.toString(totPos));
-    results.add(Double.toString(totNeg));
-    results.add(Double.toString(totObj));
-    results.add(Integer.toString(relatedTweets.size()));
+
+
+    results.add(new Integer(totPos.intValue()));
+    results.add(new Integer(totNeg.intValue()));
+    results.add(new Integer(totObj.intValue()));
+    results.add(new Integer(relatedTweets.size()));
     return results;
   }
   

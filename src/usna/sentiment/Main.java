@@ -1,7 +1,8 @@
 package usna.sentiment;
 
 import java.util.Map;
-
+import java.util.ArrayList;
+import java.util.List;
 
 // usna packages
 import usna.sentiment.Lexicon;
@@ -20,9 +21,17 @@ import usna.util.CommandLineUtils;
  */
 public class Main {
 
-
-
   public static void main(String args[]) {
+    String stock;
+    String stockcommon;
+    // build a range of days based on some input
+    List<Day> days = new ArrayList<Day>();
+    Stock aapl = new Stock("AAPL","20120329","20130329");
+    for ( String timestamp : aapl.keySet() ) {
+      Model apple = new Model();
+      Day tempDay = new Day(aapl.getData(timestamp),apple.process(timestamp,"apple"),timestamp);
+      days.add(tempDay);
+    }
 
     // Here we have a basic outline for how to add in command line arguments from
     // Chamber's code.
