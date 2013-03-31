@@ -55,7 +55,8 @@ public class Model {
 		 *
 		 */
 		for(LabeledTweet t : labeled) {
-			String tweet = datasets.filterTweet(t.getText().toLowerCase());
+			String tweet = Datasets.filterTweet(t.getText().toLowerCase());
+      System.out.println(Datasets.filterTweet(t.getText().toLowerCase()));
 			List<String> words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
 			for(String word : words) {
 				if(!stopwords.contains(word) && word.length() > 3) {
@@ -98,25 +99,23 @@ public class Model {
 		 *
 		 */
 		try {
-			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("positive.txt")));
+			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("datasets/lexicon/positive.txt")));
 			for(String word : positiveWords.keySet()) {
-				writer.printf("%s\t%f\n",word,positiveWords.getCount(word)/posTotal);
+				writer.printf("%s\t%f\n",word,positiveWords.getCount(word)/positiveWords.size());
 			}
 			writer.close();
 		} catch(IOException ex) { ex.printStackTrace(); }
-
 		try {
-			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("negative.txt")));
+			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("datasets/lexicon/negative.txt")));
 			for(String word : negativeWords.keySet()) {
-				writer.printf("%s\t%f\n",word,negativeWords.getCount(word)/negTotal);
+				writer.printf("%s\t%f\n",word,negativeWords.getCount(word)/negativeWords.size());
 			}
 			writer.close();
 		} catch(IOException ex) { ex.printStackTrace(); }
-		
 		try {
-			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("objective.txt")));
+			PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("datasets/lexicon/objective.txt")));
 			for(String word : objectiveWords.keySet()) {
-				writer.printf("%s\t%f\n",word,objectiveWords.getCount(word)/objTotal);
+				writer.printf("%s\t%f\n",word,objectiveWords.getCount(word)/objectiveWords.size());
 			}
 			writer.close();
 		} catch(IOException ex) { ex.printStackTrace(); }
@@ -127,8 +126,27 @@ public class Model {
 	 *
 	 */
 	public void test() {
-
+    List<SENTIMENT> guesses = null;
+		guesses = labelWithLexicon(datasets.getLabeledTweets(),
+				datasets.getLexiconPositiveWords(),
+				datasets.getLexiconNegativeWords(),
+        datasets.getLexiconObjectiveWords());
+    double accuracy = Evaluator.evaluate(guesses,datasets.getLabeledTweets());
+    System.out.printf("Final Accuracy = %.3f%%\n",accuracy);
 	}
+
+  private List<SENTIMENT> labelWithLexicon(List<LabeledTweet> tweets, Counter<String> positiveWords,
+        Counter<String> negativeWords,Counter<String> objectiveWords) {
+    List<SENTIMENT> labels = new ArrayList<SENTIMENT>();
+    SENTIMENT sent;
+    String tweet;
+    for(LabeledTweet t : tweets) {
+       tweet = Datasets.filterTweet(t.getText());
+      sent = naiveBayes(tweet,positiveWords,negativeWords,objectiveWords);
+      labels.add(sent);
+    }
+    return labels;
+  }
 
   /**
    *  This program runs a naive bayes on a given tweet.  It takes in a weighted
@@ -145,37 +163,52 @@ public class Model {
    */
   public SENTIMENT naiveBayes(String tweet, Counter<String> positiveWords, Counter<String> negativeWords, Counter<String> objectiveWords) {
     String[] strArray = null;
-    double pos = 0;
-    double neg = 0;
-    double obj = 0;
+
+    // encode the priors here
+    double pos = Math.log(.333);
+    double neg = Math.log(.333);
+    double obj = Math.log(.333);
     
     strArray = tweet.split("[\\s]+");
 
     // add all the probabilities together using logs to smooth some of errors
     for( String word : strArray ) {
-      if(positiveWords.containsKey(word))
-        pos = pos + Math.abs(Math.log(positiveWords.getCount(word)));
-      if(negativeWords.containsKey(word))
-        neg = neg + Math.abs(Math.log(negativeWords.getCount(word)));
-      if(objectiveWords.containsKey(word))
-        obj = obj + Math.abs(Math.log(objectiveWords.getCount(word)));
+      if(positiveWords.containsKey(word)) {
+        pos = pos + Math.log(positiveWords.getCount(word));
+      } else {
+        pos = pos + Math.log(0.0000000000000000000001);
+      }
+      if(negativeWords.containsKey(word)) {
+        neg = neg + Math.log(negativeWords.getCount(word));
+      } else {
+        neg = neg + Math.log(0.0000000000000000000001);
+      }
+      if(objectiveWords.containsKey(word)) {
+        obj = obj + Math.log(objectiveWords.getCount(word));
+      } else{
+        obj = obj + Math.log(0.0000000000000000000001);
+      }
     }
         
     // convert all the weights into percentages
     obj = Math.exp(obj);
+    System.out.println("Obj: " + obj);
     pos = Math.exp(pos);
     neg = Math.exp(neg);
-    obj = obj / (obj + neg + pos);
+    //obj = obj / (pos + neg + obj);
     pos = pos / (pos + neg + obj);
     neg = neg / (pos + neg + obj);
-
+    System.out.println("Pos: " + pos);
+    System.out.println("Neg: " + neg);
+    System.out.println(tweet);
+    System.out.println();
     // apply a threshold to get values
-	  if(obj > .4)
-      return SENTIMENT.OBJECTIVE;
-	  else if (pos > .4) 
+    if( pos > .3)
       return SENTIMENT.POSITIVE;
-	  else 
+    else if( neg > .3)
       return SENTIMENT.NEGATIVE;
+    else
+      return SENTIMENT.OBJECTIVE;
   }
 
 	/*
@@ -228,8 +261,6 @@ public class Model {
         totObj++;
       }
     }
-
-
     results.add(new Integer(totPos.intValue()));
     results.add(new Integer(totNeg.intValue()));
     results.add(new Integer(totObj.intValue()));
@@ -264,6 +295,6 @@ public class Model {
 	 */
 	public static void main(String args[]) {
 		Model test = new Model();
-    test.process("20130317","apple");
+    test.train();
 	}
 }

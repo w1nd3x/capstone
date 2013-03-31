@@ -350,7 +350,53 @@ public class TrainTest {
 	 * @throws IOException
 	 */
 	public void learnTheLexicon() throws IOException {
+    // cycle through tweets find smileys, add associated sentiment
+    ArrayList<String> positiveEmoticons = new ArrayList<String>();
+    ArrayList<String> negativeEmoticons = new ArrayList<String>();
+    positiveEmoticons.add(":)");
+    positiveEmoticons.add(";)");
+    positiveEmoticons.add(";]");
+    positiveEmoticons.add(";-)");
+    positiveEmoticons.add(":-)");
+    positiveEmoticons.add(":D");
+    negativeEmoticons.add(":(");
+    negativeEmoticons.add(":[");
+    negativeEmoticons.add(":'(");
+    negativeEmoticons.add(":,(");
+    negativeEmoticons.add("D8");
+    negativeEmoticons.add(":-(");
+    negativeEmoticons.add("D:");
+    negativeEmoticons.add("D;");
+    negativeEmoticons.add("DX");
+    negativeEmoticons.add("D=");
+    String tweet = datasets.getNextRawTweet();
+    try {
+		  PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("PositiveTweets.txt")));
+    while(tweet != null) {
+      String[] tweetParts = tweet.split("\t");
+      if(tweetParts.length > 0) {
+        tweet = tweetParts[0];
+        if(engCheck(tweet)) {
+          for(String emo : negativeEmoticons) {
+            if(tweet.contains(emo)){
+              writer.println("NEGATIVE\t" + tweet);
+              break;
+            }
+          }
+          for(String emo : positiveEmoticons) {
+            if ( tweet.contains(emo) ) {
+              writer.println("POSITIVE\t" + tweet);
+              break;
+            }
+          }
+        }
+      }
+      tweet = datasets.getNextRawTweet();
+    }
+    writer.close();
+    } catch(IOException ex) { ex.printStackTrace(); }
 
+    /*
 		// loads all the stop words from the text documents
 		loadStop();
 
@@ -375,7 +421,7 @@ public class TrainTest {
 		// ***********************
 		addSentiment(); // gets related tweets
 		// ***********************
-
+    */
 	}
 
 

@@ -146,7 +146,7 @@ public class Datasets {
   public List<LabeledTweet> getLabeledTweets() {
     List<LabeledTweet> tweets = new ArrayList<LabeledTweet>();
     //String path = "/tmp/sentiment-data/lexicon/new-labeled-tweets.txt";
-    String path = "./datasets/combined-labeled-tweets.txt"; 
+    String path = "./datasets/emoticon-labeled-tweets.txt"; 
     try {
       BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
       String line = in.readLine();
@@ -279,8 +279,11 @@ public class Datasets {
 	 *  Filters stuff out of a tweet
    */
 	public static String filterTweet(String tweet) {
-		tweet = tweet.replaceAll("http://[^\\s]+", "");
-		return tweet.toLowerCase().replaceAll("[\\,\\.\\!\\@\\#\\$\\%\\^\\&\\*\\_\\-\\+\\=\\?\\\"]", "");
+    tweet = tweet.toLowerCase();
+		tweet = tweet.replaceAll("http[s]*://[^\\s\\n]+", "");
+    tweet = tweet.replaceAll("^rt ","");
+    tweet = tweet.replaceAll("@[^\\s\\n]+", "");
+		return tweet.replaceAll("[^A-Za-z0-9 ]", "");
 	}
   
   /**
