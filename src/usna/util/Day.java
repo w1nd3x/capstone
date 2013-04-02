@@ -13,19 +13,33 @@ public class Day {
 	
 	String date;
 	
-	int OBJ;
-	int POS;
-	int NEG;
-	int TOT;
+	double OBJ;
+	double POS;
+	double NEG;
+	double TOT;
 	double openPrice;
 	double closePrice;
 	double diffPrice;
 	Counter<String> unigram = new Counter<String>();
 	Counter<String> bigram = new Counter<String>();
 	Counter<String> trigram = new Counter<String>();
+
+  	double diffSlope;
 	
 	private double score = 0;
-	
+
+
+  public Day() {
+		date = null;
+		POS = 0;
+		NEG = 0;
+		OBJ = 0;
+		TOT = 0;
+		openPrice = 0;
+		closePrice = 0;
+		diffPrice = 0;
+    score = 0;
+  }
 	public Day(List<String> stockData, List<Integer> tweetData, String d){
 		
 		date = d;
@@ -47,6 +61,10 @@ public class Day {
 	
 	public double getScore(){
 		return score;
+	}
+
+	public double getdiffSlope(){
+		return diffSlope;
 	}
 	
 	public String getDate(){

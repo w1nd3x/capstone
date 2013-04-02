@@ -67,7 +67,7 @@ public class Datasets {
   }
   
   private boolean openRawDatedFile(String timestamp) {
-	  String dir = rootDirectory + "/tweets";
+	  String dir = "/home/nchamber/corpora/Twitter/USNA/";
 	  
 	  // Make sure it is a valid directory.
 	  File filedir = new File(dir);
@@ -96,7 +96,7 @@ public class Datasets {
   }
   
   private boolean advanceRawFile() {
-	  String dir = rootDirectory + "/tweets";
+	  String dir = "/home/nchamber/corpora/Twitter/USNA/";
 	  
 	  // Make sure it is a valid directory.
 	  File filedir = new File(dir);
@@ -145,24 +145,60 @@ public class Datasets {
    */
   public List<LabeledTweet> getLabeledTweets() {
     List<LabeledTweet> tweets = new ArrayList<LabeledTweet>();
-    //String path = "/tmp/sentiment-data/lexicon/new-labeled-tweets.txt";
-    String path = "./datasets/emoticon-labeled-tweets.txt"; 
+    String path = "./datasets/all-test-tweets.txt";
     try {
       BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
       String line = in.readLine();
       while( line != null ) {
         String parts[] = line.split("\t");
-        tweets.add(new LabeledTweet(SENTIMENT.valueOf(parts[0].toUpperCase()), parts[1]));
+        tweets.add(new LabeledTweet(SENTIMENT.valueOf(parts[0].toUpperCase()),parts[1]));
         line = in.readLine();
       }
       in.close();
-    } catch( IOException ex ) { 
+    } catch( IOException ex ) {
       System.err.println("Error opening file: " + path);
       ex.printStackTrace();
     }
-    
     return tweets;
   }
+
+  public String getNextLabeledTweet() {
+    //String path = "/tmp/sentiment-data/lexicon/new-labeled-tweets.txt.gz";
+    if( rawReader != null ) {
+      try {
+        String line = rawReader.readLine();
+        if( line != null )
+          return line;
+      } catch( IOException ex ) { ex.printStackTrace(); }
+    }
+    if( openLabeledTweetFile()) {
+      return getNextLabeledTweet();
+      } else return null;
+  }
+
+  private boolean openLabeledTweetFile( ) {
+    String dir = "./datasets/";
+
+    // already read the datefile
+    if(currentRawFile == null)
+      currentRawFile = dir + "/emoticon-labeled-tweets.txt.gz";
+    else
+      return false; 
+	  
+    // Open the date file from this directory.
+	  System.out.println("opening file " + currentRawFile);
+	  try {
+		  if( rawReader != null ) rawReader.close();
+		  InputStream in = new GZIPInputStream(new FileInputStream(new File(dir + "/emoticon-labeled-tweets.txt.gz")));
+		  rawReader = new BufferedReader(new InputStreamReader(in));
+	  } catch( IOException ex ) { 
+		  System.err.println("Error opening file: emoticon-labeled-tweets.txt.gz");
+		  ex.printStackTrace();
+    }
+    return true;
+  }
+
+
 
   /**
    * Grab all the positive words from the Opinion Lexicon.
@@ -280,10 +316,12 @@ public class Datasets {
    */
 	public static String filterTweet(String tweet) {
     tweet = tweet.toLowerCase();
-		tweet = tweet.replaceAll("http[s]*://[^\\s\\n]+", "");
-    tweet = tweet.replaceAll("^rt ","");
-    tweet = tweet.replaceAll("@[^\\s\\n]+", "");
-		return tweet.replaceAll("[^A-Za-z0-9 ]", "");
+    tweet = tweet.replaceAll("&lt;","<").replaceAll("&gt;",">");;
+		tweet = tweet.replaceAll("http[s]*://[^\\s\\n]+", "").replaceAll("@[^\\s\\n]+", "");
+    tweet = tweet.replaceAll("^rt ","").replaceAll(" rt","").replaceAll(" rt ","");
+    tweet = tweet.replaceAll("([!?]+)", " $1 ");
+    tweet = tweet.replaceAll("[\\.\\#\\$\\-\"\\,]"," ");
+    return tweet.replaceAll("([A-Za-z']+)", " $1 ");
 	}
   
   /**

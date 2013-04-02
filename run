@@ -1,0 +1,2 @@
+#!/bin/sh
+java -mx1500m -cp classes usna.sentiment.Main $@

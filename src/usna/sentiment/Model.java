@@ -47,21 +47,21 @@ public class Model {
 		double negTotal = 0;  
 		double objTotal = 0;  
 		
-		List<LabeledTweet> labeled = datasets.getLabeledTweets();
+	  String labeled = datasets.getNextLabeledTweet();
 		Set<String> stopwords = datasets.loadStop();		
 		/* 
 		 * This loops through all the labeled tweets and gets a count 
 		 * of the positive, negative, and objective words in the tweet
 		 *
 		 */
-		for(LabeledTweet t : labeled) {
-			String tweet = Datasets.filterTweet(t.getText().toLowerCase());
-      System.out.println(Datasets.filterTweet(t.getText().toLowerCase()));
+    while( labeled != null ) {
+      String[] array1;
+      array1 = labeled.split("\t");
+			String tweet = Datasets.filterTweet(array1[1]);
 			List<String> words = new ArrayList<String>(Arrays.asList(tweet.split("[\\s]+")));
 			for(String word : words) {
 				if(!stopwords.contains(word) && word.length() > 3) {
-					switch(t.getSentiment()) {
-						case POSITIVE:
+						if(array1[0].equals("POSITIVE")) {
 							if(positiveWords.containsKey(word)) {
 								positiveWords.incrementCount(word, 1);
                 posTotal++;
@@ -69,8 +69,7 @@ public class Model {
 								positiveWords.setCount(word, 1);
                 posTotal++;
 							}
-							break;
-						case NEGATIVE:
+            } else if(array1[0].equals("NEGATIVE")) {
 							if(negativeWords.containsKey(word)) {
 								negativeWords.incrementCount(word, 1);
                 negTotal++;
@@ -78,8 +77,7 @@ public class Model {
 								negativeWords.setCount(word, 1);
                 negTotal++;
 							}
-							break;
-						case OBJECTIVE:
+            } else if(array1[0].equals("OBJECTIVE")) {
 							if(objectiveWords.containsKey(word)) {
 								objectiveWords.incrementCount(word, 1);
                 objTotal++;
@@ -87,10 +85,10 @@ public class Model {
 								objectiveWords.setCount(word, 1);
                 objTotal++;
 							}
-							break;
+            }
 					}
 				}
-			}
+      labeled = datasets.getNextLabeledTweet();
 		}
 		
 		/*
@@ -163,49 +161,48 @@ public class Model {
    */
   public SENTIMENT naiveBayes(String tweet, Counter<String> positiveWords, Counter<String> negativeWords, Counter<String> objectiveWords) {
     String[] strArray = null;
+		stopwords = datasets.loadStop();		
 
     // encode the priors here
-    double pos = Math.log(.333);
-    double neg = Math.log(.333);
-    double obj = Math.log(.333);
-    
+    double pos = 0.0;
+    double neg = 0.0;
+    double obj = 0.0;
+   
     strArray = tweet.split("[\\s]+");
-
     // add all the probabilities together using logs to smooth some of errors
     for( String word : strArray ) {
-      if(positiveWords.containsKey(word)) {
-        pos = pos + Math.log(positiveWords.getCount(word));
-      } else {
-        pos = pos + Math.log(0.0000000000000000000001);
-      }
-      if(negativeWords.containsKey(word)) {
-        neg = neg + Math.log(negativeWords.getCount(word));
-      } else {
-        neg = neg + Math.log(0.0000000000000000000001);
-      }
-      if(objectiveWords.containsKey(word)) {
-        obj = obj + Math.log(objectiveWords.getCount(word));
-      } else{
-        obj = obj + Math.log(0.0000000000000000000001);
+      if(!stopwords.contains(word)) {
+        if(positiveWords.containsKey(word)) {
+          pos = pos + Math.log(positiveWords.getCount(word));
+        } else {
+          pos = pos + Math.log(0.0000000000000000000001);
+        }
+        if(negativeWords.containsKey(word)) {
+          neg = neg + Math.log(negativeWords.getCount(word));
+        } else {
+          neg = neg + Math.log(0.0000000000000000000001);
+        }
+        if(objectiveWords.containsKey(word)) {
+          obj = obj + Math.log(objectiveWords.getCount(word));
+        } else{
+          obj = obj + Math.log(0.0000000000000000000001);
+        }
       }
     }
         
     // convert all the weights into percentages
-    obj = Math.exp(obj);
-    System.out.println("Obj: " + obj);
-    pos = Math.exp(pos);
-    neg = Math.exp(neg);
+    //obj = Math.exp(obj);
+    double temppos = Math.exp(pos + Math.log(0.20));
+    double tempneg = Math.exp(neg + Math.log(0.10));
+    double tempobj = Math.exp(obj + Math.log(0.70));
     //obj = obj / (pos + neg + obj);
-    pos = pos / (pos + neg + obj);
-    neg = neg / (pos + neg + obj);
-    System.out.println("Pos: " + pos);
-    System.out.println("Neg: " + neg);
-    System.out.println(tweet);
-    System.out.println();
+    pos = temppos / (temppos + tempneg + tempobj);
+    neg = tempneg / (temppos + tempneg + tempobj);
+    obj = tempobj / (temppos + tempneg + tempobj);
     // apply a threshold to get values
-    if( pos > .3)
+    if(Math.max(pos,Math.max(neg,obj)) == pos) 
       return SENTIMENT.POSITIVE;
-    else if( neg > .3)
+    else if( Math.max(pos,Math.max(neg,obj)) == neg)
       return SENTIMENT.NEGATIVE;
     else
       return SENTIMENT.OBJECTIVE;
@@ -223,6 +220,10 @@ public class Model {
     List<Integer> results = new ArrayList<Integer>();
     SENTIMENT sent;
 		String[] tweetParts;
+    Double totPos = new Double(0.0);
+    Double totNeg = new Double(0.0);
+    Double totObj = new Double(0.0);
+    
     englishWords = datasets.loadEnglish();
     lexicon = datasets.getLexicon(anchor);
     if(lexicon == null) {
@@ -230,12 +231,9 @@ public class Model {
       System.exit(1);
     }
 		
-    Double totPos = new Double(0.0);
-    Double totNeg = new Double(0.0);
-    Double totObj = new Double(0.0);
     String tweet = datasets.getNextDatedTweet(timestamp);
     while(tweet != null) {
-      tweetParts = tweet.toLowerCase().split("\t");
+      tweetParts = tweet.split("\t");
       if(tweetParts.length > 0) {
         tweet = datasets.filterTweet(tweetParts[0]);
         if(engCheck(tweet)) {
@@ -250,7 +248,6 @@ public class Model {
       }
       tweet = datasets.getNextDatedTweet(timestamp);
     }
-
     for( String t : relatedTweets ) {
       sent = naiveBayes(t,positiveWords,negativeWords,objectiveWords);  
       if(sent.equals(SENTIMENT.POSITIVE)) {
@@ -295,6 +292,6 @@ public class Model {
 	 */
 	public static void main(String args[]) {
 		Model test = new Model();
-    test.train();
+    test.test();
 	}
 }

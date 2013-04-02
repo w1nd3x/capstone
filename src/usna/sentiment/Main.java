@@ -22,37 +22,76 @@ import usna.util.CommandLineUtils;
 public class Main {
 
   public static void main(String args[]) {
-    String stock;
-    String stockcommon;
-    // build a range of days based on some input
-    List<Day> days = new ArrayList<Day>();
-    Stock aapl = new Stock("AAPL","20120329","20130329");
-    for ( String timestamp : aapl.keySet() ) {
-      Model apple = new Model();
-      Day tempDay = new Day(aapl.getData(timestamp),apple.process(timestamp,"apple"),timestamp);
-      days.add(tempDay);
+    Map<String, String> flags = CommandLineUtils.simpleCommandLineParser(args);
+    Datasets datasets = new Datasets("./datasets/");
+    boolean train = false;
+    boolean test = false;
+    boolean interpolate = false;
+    boolean constructLex = false;
+    String build = null;
+    String anchor = null;
+    String stock = null;
+    String start = null;
+    String end = null;
+
+
+    if (flags.containsKey("-test")&&flags.containsKey("-train")) {
+      System.out.println("Error: cannot test and train in the same run");
+      //Main.usage();
+      System.exit(1);
+    }
+    if (flags.containsKey("-train")) {
+      train = true;
+    }
+    if (flags.containsKey("-test")) {
+      test = true;
+    }
+    if (flags.containsKey("-anchor")&&flags.containsKey("-start")&&flags.containsKey("-end")) {
+      anchor = flags.get("-anchor");
+      start = flags.get("-start");
+      end = flags.get("-end");
+      interpolate = true;
+      System.out.println("INTERPOLATE");
+    }
+    if (flags.containsKey("-build")&&flags.containsKey("-anchor")) {
+      build = flags.get("-build");
+      anchor = flags.get("-anchor");
+      constructLex = true;
+    }
+    
+    // Test the model
+    if(test){
+      Model testModel = new Model();
+      testModel.test();
+      return;
     }
 
-    // Here we have a basic outline for how to add in command line arguments from
-    // Chamber's code.
-    /*Map<String, String> flags = CommandLineUtils.simpleCommandLineParser(args);
-    if (!flags.containsKey("-data")) {
-      System.out.println("TrainTest -data <data-dir> [-learnmylex] [-usemylex]");
-			System.exit(1);
-		}
-		if (flags.containsKey("-learnmylex") && flags.containsKey("-usemylex")) {
-			System.out.println("Hmm, can't learn a lexicon and use the lexicon at the same time.");
-			System.exit(1);
-		} else if (flags.containsKey("-learnmylex")) {
-			anchor = flags.get("-learnmylex");
-			learnLexicon = true;
-		} else if (flags.containsKey("-usemylex"))
-			testWithLearned = true;
+    // Train the model
+    if(train) {
+      Model trainModel = new Model();
+      trainModel.train();
+      return;
+    }
 
-		datasets = new Datasets(flags.get("-data"));
-    */
-    // After done whatever we're going to do with the commandline we need to 
-    // sdet up and run the model.
-	}
+    if(constructLex) {
+      ArrayList<String> lexical = new ArrayList<String>();
+      Lexicon lexicon = new Lexicon(anchor);
+      lexicon.build(lexical);
+      return;
+    }
 
+    if(interpolate) {
+      Interpolate Mod = new Interpolate();
+      // build a range of days based on some input
+      Stock aapl = new Stock("AAPL",start,end);
+      for ( String timestamp : aapl.keyList() ) {
+        Model apple = new Model();
+        Day tempDay = new Day(aapl.getData(timestamp),apple.process(timestamp,anchor),timestamp);
+        Mod.newDay(tempDay);
+      }
+      for(String lex : datasets.getLexicon(anchor)) {
+        System.out.println("\t" + lex);
+      }
+    }
+  }
 }

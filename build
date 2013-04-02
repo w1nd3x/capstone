@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+#
+#
+cp -r ./org src/
+ant
+# you will probably get a build failed message
+rm ./src/org/jdom2/test ./src/org/jdom2/contrib ./src/org/jdom2/input/sax/Test* ./src/org/jdom2/Test*
+ant

@@ -1,1 +1,19 @@
-This is our project
+First Installation:
+1. Once you've downloaded the source, hopefully using git, run the build script.
+2. That is all.
+
+
+Once Installed:
+# process over a set of days 
+./run -anchor "anchor" -start "YYYYMMDD" -end "YYYYMMDD" 
+
+# train a new model on a set of labeled tweets 
+./run -train
+
+# test a model against a test set of labeled tweets 
+./run -test
+
+# build a new lexicon 
+./run -anchor "anchor" -build
+
+

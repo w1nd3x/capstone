@@ -8,6 +8,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -16,9 +17,11 @@ public class Stock {
 	
 	private String ticker;
 	private HashMap<String, List<String>> stockData;
+	private String start;
 	private String startYear;
 	private String startMonth;
 	private String startDay;
+	private String end;
 	private String endYear;
 	private String endMonth;
 	private String endDay;
@@ -28,13 +31,13 @@ public class Stock {
 		//Constructor
 		stockData = new HashMap<String,List<String> >();
 		ticker = tick;
-		
+		this.start = start;
 		startYear = start.substring(0, 4);
-		startMonth = start.substring(4,6);
+		startMonth = Integer.toString(Integer.parseInt(start.substring(4,6))-1);
 		startDay = start.substring(6,8);
-		
+		this.end = end;
 		endYear = end.substring(0, 4);
-		endMonth = end.substring(4,6);
+		endMonth = Integer.toString(Integer.parseInt(end.substring(4,6))-1);
 		endDay = end.substring(6,8);
 		//GENERATE CSV FILE
 		try{
@@ -80,8 +83,15 @@ public class Stock {
    *  
    *  @return set of keys
    */
-  public Set<String> keySet() {
-    return stockData.keySet();
+  public ArrayList<String> keyList() {
+    ArrayList<String> result = new ArrayList<String>();
+    int start = Integer.parseInt(this.start);
+    int end = Integer.parseInt(this.end);
+    for(int i = start; i < end; i++) {
+      if(stockData.get(Integer.toString(i)) != null)
+        result.add(Integer.toString(i));
+    } 
+    return result;
   }
 	
 	public List<String> getData(String date){
